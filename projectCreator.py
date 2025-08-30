@@ -133,33 +133,28 @@ def create_project_structure(agent_result: Dict[str, Any], project_name: str = "
 
 
 def generate_project_documentation(requirements: Dict) -> str:
-    """Generate project documentation from amplified requirements"""
-    analysis = requirements.get('project_analysis', {})
-    detailed = requirements.get('detailed_requirements', {})
-    
-    doc = f"""# Project Requirements and Analysis
+    """Generate project documentation from amplified requirements (supports multiple shapes)."""
+    # Support legacy shape
+    if 'project_analysis' in requirements or 'detailed_requirements' in requirements:
+        analysis = requirements.get('project_analysis', {})
+        detailed = requirements.get('detailed_requirements', {})
+        doc = f"""# Project Requirements and Analysis
 
-    ## Core Purpose
+## Core Purpose
 {analysis.get('core_purpose', 'Not specified')}
 
-## Target Users  
+## Target Users
 {analysis.get('target_users', 'Not specified')}
 
 ## Key Features
 """
-    
-    for feature in analysis.get('key_features', []):
-        doc += f"- {feature}\n"
-    
-    doc += f"""
-## Technical Requirements
-"""
-    
-    for req in analysis.get('technical_requirements', []):
-        doc += f"- {req}\n"
-        
-    doc += f"""
-## UI/UX Considerations
+        for feature in analysis.get('key_features', []):
+            doc += f"- {feature}\n"
+        doc += "\n## Technical Requirements\n"
+        for req in analysis.get('technical_requirements', []):
+            doc += f"- {req}\n"
+        doc += f"""
+\n## UI/UX Considerations
 {analysis.get('ui_ux_considerations', 'Not specified')}
 
 ## Detailed Implementation Requirements
@@ -167,7 +162,7 @@ def generate_project_documentation(requirements: Dict) -> str:
 ### HTML Structure
 {detailed.get('html_structure', 'Not specified')}
 
-### CSS Styling  
+### CSS Styling
 {detailed.get('css_styling', 'Not specified')}
 
 ### JavaScript Functionality
@@ -176,5 +171,25 @@ def generate_project_documentation(requirements: Dict) -> str:
 ---
 *Generated automatically from user requirements*
 """
-    
+        return doc
+
+    # Support new shape from current amplification prompt
+    structural = requirements.get('structural_demand', {})
+    styling = requirements.get('styling_demand', {})
+    scripting = requirements.get('scripting_demand', {})
+
+    doc = "# Project Requirements and Analysis\n\n"
+    doc += "## Structural Demand\n"
+    for k in ["purpose", "layout", "content", "semantic_structure"]:
+        doc += f"- {k.replace('_',' ').title()}: {structural.get(k, 'Not specified')}\n"
+
+    doc += "\n## Styling Demand\n"
+    for k in ["visual_design", "responsive_design", "animations", "design_system"]:
+        doc += f"- {k.replace('_',' ').title()}: {styling.get(k, 'Not specified')}\n"
+
+    doc += "\n## Scripting Demand\n"
+    for k in ["interactions", "dynamic_content", "api_integration", "functionality"]:
+        doc += f"- {k.replace('_',' ').title()}: {scripting.get(k, 'Not specified')}\n"
+
+    doc += "\n---\n*Generated automatically from user requirements*\n"
     return doc
