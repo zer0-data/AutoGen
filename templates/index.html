@@ -21,6 +21,11 @@
     button:hover { background:#6d89fb; }
     .hint { color:#9fb0ff; font-size: 12px; }
     .card { background:#0e1534; border:1px solid #22307a; border-radius: 10px; padding:12px; }
+  /* Canvas styles */
+  .canvas-wrap { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  canvas { background:#fff; border-radius:8px; box-shadow:0 0 0 1px #22307a inset; max-width:100%; height:auto; }
+  .tool { display:flex; gap:8px; align-items:center; }
+  .tool label { color:#b7c1ff; font-weight:500; }
   </style>
 </head>
 <body>
@@ -47,6 +52,29 @@
             <input type="file" id="image" name="image" accept="image/*" />
             <div class="hint">If provided, the app will try to match the design.</div>
           </div>
+          <div class="card">
+            <label>Or draw a quick wireframe</label>
+            <div class="canvas-wrap">
+              <div class="tool">
+                <label>Color</label>
+                <input type="color" id="penColor" value="#000000" />
+              </div>
+              <div class="tool">
+                <label>Size</label>
+                <input type="range" id="penSize" min="1" max="20" value="3" />
+              </div>
+              <button type="button" id="clearCanvas">Clear</button>
+            </div>
+            <canvas id="wireCanvas" width="900" height="560"></canvas>
+            <input type="hidden" name="canvas_data" id="canvas_data" />
+            <div class="hint">We’ll send this drawing as a reference image to the generator.</div>
+          </div>
+          <div class="card">
+            <label for="figma_url">Or Figma file URL</label>
+            <input type="text" id="figma_url" name="figma_url" placeholder="https://www.figma.com/file/<KEY>/..." />
+            <input type="password" name="figma_token" placeholder="Figma personal access token (or set FIGMA_TOKEN env var)" />
+            <div class="hint">We’ll render the first page of the file to an image and use it as reference.</div>
+          </div>
         </div>
 
         <div class="card">
@@ -66,6 +94,78 @@
         <button type="submit">Generate project</button>
       </div>
     </form>
+    <script>
+      (function() {
+        const canvas = document.getElementById('wireCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
+        let lastX = 0, lastY = 0;
+        let isDirty = false;
+        const colorEl = document.getElementById('penColor');
+        const sizeEl = document.getElementById('penSize');
+        const clearBtn = document.getElementById('clearCanvas');
+        const hidden = document.getElementById('canvas_data');
+
+        // White background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+
+        function getPos(e) {
+          const rect = canvas.getBoundingClientRect();
+          const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+          const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+          return {
+            x: (clientX - rect.left) * (canvas.width / rect.width),
+            y: (clientY - rect.top) * (canvas.height / rect.height)
+          };
+        }
+
+        function start(e) {
+          drawing = true;
+          isDirty = true;
+          const p = getPos(e);
+          lastX = p.x; lastY = p.y;
+        }
+        function move(e) {
+          if (!drawing) return;
+          const p = getPos(e);
+          ctx.strokeStyle = colorEl.value;
+          ctx.lineWidth = Number(sizeEl.value);
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.beginPath();
+          ctx.moveTo(lastX, lastY);
+          ctx.lineTo(p.x, p.y);
+          ctx.stroke();
+          lastX = p.x; lastY = p.y;
+          e.preventDefault();
+        }
+        function end() { drawing = false; }
+
+        canvas.addEventListener('mousedown', start);
+        canvas.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', end);
+        canvas.addEventListener('touchstart', start, {passive:false});
+        canvas.addEventListener('touchmove', move, {passive:false});
+        canvas.addEventListener('touchend', end);
+
+        clearBtn.addEventListener('click', () => {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0,0,canvas.width,canvas.height);
+          isDirty = false;
+          hidden.value = '';
+        });
+
+        // On submit, if dirty, capture as PNG
+        const form = document.querySelector('form[action="/generate"]');
+        form.addEventListener('submit', () => {
+          if (isDirty) {
+            hidden.value = canvas.toDataURL('image/png');
+          }
+        });
+      })();
+    </script>
   </div>
 </body>
 </html>
