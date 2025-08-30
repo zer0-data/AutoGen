@@ -2,7 +2,10 @@ import os
 import io
 import zipfile
 from pathlib import Path
+from urllib.parse import urlparse, parse_qs
+import requests
 from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify, flash
+import base64
 
 from backend import create_and_deploy_project
 
@@ -14,6 +17,55 @@ def create_app():
     @app.route("/", methods=["GET"]) 
     def index():
         return render_template("index.html")
+
+    def _extract_figma_key_and_node(figma_url: str):
+        try:
+            u = urlparse(figma_url)
+            parts = [p for p in u.path.split('/') if p]
+            key = None
+            if len(parts) >= 2 and parts[0] in ("file", "design"):
+                key = parts[1]
+            # node-id may exist in query
+            q = parse_qs(u.query)
+            node = q.get('node-id', [None])[0]
+            return key, node
+        except Exception:
+            return None, None
+
+    def _download_figma_image(figma_url: str, token: str, uploads_dir: Path) -> str | None:
+        key, node = _extract_figma_key_and_node(figma_url)
+        if not key or not token:
+            return None
+
+        headers = {"X-FIGMA-TOKEN": token}
+        # If node missing, fetch first page id
+        if not node:
+            meta = requests.get(f"https://api.figma.com/v1/files/{key}", headers=headers, timeout=30)
+            meta.raise_for_status()
+            data = meta.json()
+            # document.children is list of pages
+            node = data.get('document', {}).get('children', [{}])[0].get('id')
+            if not node:
+                return None
+        # Get image URL for the node
+        imgs = requests.get(
+            f"https://api.figma.com/v1/images/{key}",
+            headers=headers,
+            params={"ids": node, "format": "png", "scale": 2},
+            timeout=30,
+        )
+        imgs.raise_for_status()
+        img_url = imgs.json().get('images', {}).get(node)
+        if not img_url:
+            return None
+        # Download image
+        img_resp = requests.get(img_url, timeout=60)
+        img_resp.raise_for_status()
+        uploads_dir.mkdir(parents=True, exist_ok=True)
+        out_path = uploads_dir / f"figma_{key}_{node.replace(':','-')}.png"
+        with open(out_path, 'wb') as f:
+            f.write(img_resp.content)
+        return str(out_path)
 
     @app.route("/generate", methods=["POST"]) 
     def generate():
@@ -28,6 +80,33 @@ def create_app():
             uploads_dir.mkdir(parents=True, exist_ok=True)
             img_path = str(uploads_dir / file.filename)
             file.save(img_path)
+
+        # Optional Canvas drawing (data URL)
+        canvas_data = request.form.get("canvas_data", "")
+        if canvas_data.startswith("data:image/"):
+            try:
+                header, b64 = canvas_data.split(",", 1)
+                raw = base64.b64decode(b64)
+                uploads_dir = Path("uploads")
+                uploads_dir.mkdir(parents=True, exist_ok=True)
+                img_path = str(uploads_dir / "canvas_wireframe.png")
+                with open(img_path, 'wb') as f:
+                    f.write(raw)
+            except Exception as e:
+                flash(f"Canvas image parse failed: {e}", "error")
+
+        # Optional Figma URL -> render first page to PNG
+        figma_url = request.form.get("figma_url", "").strip()
+        figma_token = request.form.get("figma_token") or os.getenv("FIGMA_TOKEN")
+        if figma_url:
+            try:
+                img_from_figma = _download_figma_image(figma_url, figma_token, Path("uploads"))
+                if img_from_figma:
+                    img_path = img_from_figma
+                else:
+                    flash("Unable to render Figma file. Check URL and token.", "error")
+            except Exception as e:
+                flash(f"Figma fetch failed: {e}", "error")
 
         auto_deploy = request.form.get("auto_deploy") == "on"
         username = request.form.get("github_username") or None

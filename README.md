@@ -34,6 +34,12 @@ Open http://localhost:5000 in your browser.
 - Model API key is read from environment variable GOOGLE_API_KEY (no hardcoded secrets).
 - Generated project can be downloaded as a .zip.
 
+### Figma wireframe support
+
+- Provide a Figma file URL in the form and a Figma personal access token.
+- We render the first page of the file to a PNG and use it as the design reference.
+- Optionally set FIGMA_TOKEN as an environment variable to avoid typing it each time.
+
 # 🚀 AI Web Generator
 
 An intelligent web development agent that transforms your ideas into fully functional websites. Simply describe what you want or upload an image, and watch as it generates HTML, CSS, and JavaScript code, then automatically deploys it to GitHub Pages.

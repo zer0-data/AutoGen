@@ -43,6 +43,8 @@ Your task: Return ONLY a JSON object with this structure:
     "dynamic_content": "Content that changes based on user actions",
     "api_integration": "Data fetching, form submissions, external services",
     "functionality": "Core features, logic, state management needed"
+    import re
+
   }
 }
 
