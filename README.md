@@ -1,6 +1,6 @@
-## Web App (Flask)
+## autogen (Flask Web App)
 
-This project now includes a simple web UI to generate and optionally deploy a website from a prompt or reference image.
+autogen provides a simple web UI to generate and optionally deploy a website from a prompt, a sketch, an uploaded image, or a Figma wireframe.
 
 ### Setup
 
@@ -18,6 +18,8 @@ $env:GOOGLE_API_KEY = "<your-gemini-api-key>"
 $env:GITHUB_TOKEN = "<your-github-personal-access-token>"
 # optional secret for Flask sessions
 $env:FLASK_SECRET_KEY = "change-me"
+# optional for Figma rendering
+$env:FIGMA_TOKEN = "<your-figma-personal-access-token>"
 ```
 
 ### Run
@@ -33,12 +35,24 @@ Open http://localhost:5000 in your browser.
 - For auto-deploy to GitHub Pages from the UI, provide Username, Repo, and Token in the form, or set GITHUB_TOKEN in env and leave the field blank.
 - Model API key is read from environment variable GOOGLE_API_KEY (no hardcoded secrets).
 - Generated project can be downloaded as a .zip.
+- A Preview panel shows the generated project directly in the app.
 
 ### Figma wireframe support
 
 - Provide a Figma file URL in the form and a Figma personal access token.
 - We render the first page of the file to a PNG and use it as the design reference.
 - Optionally set FIGMA_TOKEN as an environment variable to avoid typing it each time.
+
+### Canvas sketch support
+
+- Draw a quick wireframe in the built-in canvas; it’s uploaded as a PNG and used as the reference image.
+- You can also upload a screenshot/mockup; canvas, upload, and Figma are all optional.
+
+### In-app Preview
+
+- After generation, the Results page includes a Preview section with an embedded iframe.
+- “Open Local” previews the generated project files served from your local output folder.
+- If you deployed to GitHub Pages, “Open Live” previews the live site.
 
 # 🚀 AI Web Generator
 
@@ -132,42 +146,24 @@ git config --global user.email "your.email@example.com"
 
 ## 🚀 Usage
 
-### Run the Application
+### Web App
 
-```bash
-python main.py
+```
+python app.py
 ```
 
-The application will guide you through an interactive setup:
+Then open http://localhost:5000 and:
+- Enter a prompt, optionally draw on the canvas, upload an image, or paste a Figma URL (with token).
+- Optionally provide GitHub credentials to auto-deploy to Pages.
+- View the Preview, download the .zip, or open the live site.
 
-1. **Image Input**: Choose whether to provide an image or text description
-   ```
-   Do you wanna give image input(y/n)?:- y
-   Enter the image path: /path/to/your-design.png
-   ```
+### CLI (optional)
 
-2. **Project Description**: Describe what you want to create
-   ```
-   🎯 Describe the project you want to create: Create a modern portfolio website with dark theme
-   ```
+Interactive CLI is still available:
 
-3. **Project Name**: Enter a name or press Enter for auto-generated name
-   ```
-   📁 Project name (press Enter for auto-generated): my-portfolio
-   ```
-
-4. **GitHub Deployment**: Choose whether to deploy to GitHub
-   ```
-   🚀 Deploy to GitHub? (y/n): y
-   📦 Repository name (default: my-portfolio): 
-   ```
-
-5. **Results**: View your generated project and live website
-   ```
-   🎉 SUCCESS!
-   📂 Local project: ./generated/my-portfolio
-   🌐 Live website: https://yourusername.github.io/my-portfolio
-   ```
+```
+python backend.py
+```
 
 ## 📦 Requirements
 
@@ -196,6 +192,7 @@ typing-inspection==0.4.1
 typing_extensions==4.13.2
 urllib3==2.4.0
 websockets==15.0.1
+Flask==3.0.3
 ```
 
 ### System Requirements

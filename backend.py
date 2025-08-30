@@ -69,12 +69,16 @@ def create_and_deploy_project(prompt: str, project_name: str = None,
             "website_url": None
         }
     
+    # Determine entry HTML file (fallback to index.html)
+    entry_html = agent_result.get('files', {}).get('html', {}).get('fileDir', 'index.html')
+
     result = {
         "success": True,
         "project_path": os.path.abspath(project_name),
         "amplified_requirements": agent_result.get('amplified_requirements', {}),
         "files_created": list(agent_result.get('files', {}).keys()),
-        "website_url": None
+        "website_url": None,
+        "entry_html": entry_html
     }
     
     # Step 3: Deploy to GitHub if requested

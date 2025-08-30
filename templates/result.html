@@ -12,6 +12,8 @@
     .card { background:#0e1534; border:1px solid #22307a; border-radius: 10px; padding:12px; }
     .actions { display:flex; gap:12px; margin-top: 12px; }
     .btn { background:#5b7cfa; color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:600; cursor:pointer; text-decoration:none; }
+  .preview { margin-top:16px; }
+  iframe { width:100%; height:70vh; background:white; border:1px solid #22307a; border-radius:8px; }
   </style>
 </head>
 <body>
@@ -28,6 +30,20 @@
     <div class="actions">
       <a class="btn" href="/download?path={{ result.project_path }}">Download .zip</a>
       <a class="btn" href="/">Create another</a>
+      {% if result.website_url %}
+      <a class="btn" target="_blank" href="{{ result.website_url }}">Open Live</a>
+      {% endif %}
+    </div>
+
+    <div class="preview">
+      <h3>Preview</h3>
+      <div class="actions" style="margin-bottom:8px;">
+        <button class="btn" type="button" id="openLocal">Open Local</button>
+        {% if result.website_url %}
+        <button class="btn" type="button" id="openLive">Open Live</button>
+        {% endif %}
+      </div>
+      <iframe id="previewFrame" title="Project Preview"></iframe>
     </div>
 
     {% if result.amplified_requirements %}
@@ -37,5 +53,30 @@
     </div>
     {% endif %}
   </div>
+  <script>
+    (function(){
+      const openLocal = document.getElementById('openLocal');
+      const openLive = document.getElementById('openLive');
+      const frame = document.getElementById('previewFrame');
+  const entry = "{{ result.entry_html | e }}";
+  const base = "{{ result.project_path | e }}";
+  const live = "{{ (result.website_url or '') | e }}";
+      const b64base = btoa(unescape(encodeURIComponent(base))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+
+      function previewUrl(rel){ return '/preview/' + b64base + '/' + rel; }
+
+      if (openLocal) {
+        openLocal.addEventListener('click', () => { frame.src = previewUrl(entry); });
+      }
+    if (openLive) {
+        openLive.addEventListener('click', () => {
+      if (live) frame.src = live;
+        });
+      }
+
+      // Auto load local on first view
+      if (frame && entry && base) { frame.src = previewUrl(entry); }
+    })();
+  </script>
 </body>
 </html>

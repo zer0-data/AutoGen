@@ -4,7 +4,7 @@ import zipfile
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 import requests
-from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify, flash
+from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify, flash, send_from_directory, abort
 import base64
 
 from backend import create_and_deploy_project
@@ -151,6 +151,32 @@ def create_app():
         mem.seek(0)
         proj = Path(project_path).name
         return send_file(mem, as_attachment=True, download_name=f"{proj}.zip")
+
+    def _safe_join(base: str, rel: str) -> str:
+        base_real = os.path.realpath(base)
+        target = os.path.realpath(os.path.join(base_real, rel))
+        if target == base_real or target.startswith(base_real + os.sep):
+            return target
+        raise PermissionError("Path traversal detected")
+
+    @app.route("/preview/<b64base>/", defaults={"relpath": ""})
+    @app.route("/preview/<b64base>/<path:relpath>")
+    def preview_file(b64base: str, relpath: str):
+        try:
+            base = base64.urlsafe_b64decode(b64base.encode()).decode()
+        except Exception:
+            abort(400)
+        if not os.path.isdir(base):
+            abort(404)
+        rel = relpath or "index.html"
+        try:
+            full = _safe_join(base, rel)
+        except PermissionError:
+            abort(403)
+        # If directory, try index.html
+        if os.path.isdir(full):
+            rel = os.path.join(rel, "index.html") if rel else "index.html"
+        return send_from_directory(base, rel, conditional=True)
 
     return app
 
