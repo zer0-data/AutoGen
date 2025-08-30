@@ -1,3 +1,39 @@
+## Web App (Flask)
+
+This project now includes a simple web UI to generate and optionally deploy a website from a prompt or reference image.
+
+### Setup
+
+1) Create and activate a virtual environment (optional but recommended)
+2) Install dependencies
+3) Set your API key environment variables
+
+PowerShell (Windows):
+
+```
+python -m venv .venv; .\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+$env:GOOGLE_API_KEY = "<your-gemini-api-key>"
+# optional for auto-deploy from UI
+$env:GITHUB_TOKEN = "<your-github-personal-access-token>"
+# optional secret for Flask sessions
+$env:FLASK_SECRET_KEY = "change-me"
+```
+
+### Run
+
+```
+python app.py
+```
+
+Open http://localhost:5000 in your browser.
+
+### Notes
+
+- For auto-deploy to GitHub Pages from the UI, provide Username, Repo, and Token in the form, or set GITHUB_TOKEN in env and leave the field blank.
+- Model API key is read from environment variable GOOGLE_API_KEY (no hardcoded secrets).
+- Generated project can be downloaded as a .zip.
+
 # 🚀 AI Web Generator
 
 An intelligent web development agent that transforms your ideas into fully functional websites. Simply describe what you want or upload an image, and watch as it generates HTML, CSS, and JavaScript code, then automatically deploys it to GitHub Pages.

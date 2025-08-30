@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Web Builder – Generate & Deploy</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/modern-normalize/2.0.0/modern-normalize.min.css" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif; background:#0b1020; color:#eef; }
+    .wrap { max-width: 980px; margin: 32px auto; padding: 0 16px; }
+    header h1 { margin: 0 0 8px; font-size: 28px; }
+    header p { margin: 0 0 24px; color:#b7c1ff; }
+    form { background:#111736; border:1px solid #1a2358; border-radius: 12px; padding: 16px; }
+    .row { display: grid; gap: 12px; grid-template-columns: 1fr; }
+    label { font-weight: 600; color:#c9d1ff; }
+    input[type="text"], textarea, input[type="password"]{ width: 100%; padding: 10px 12px; border-radius: 8px; border:1px solid #2a3475; background:#0e1534; color:#eef; }
+    textarea { min-height: 120px; resize: vertical; }
+    .grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+    .actions { display:flex; gap:12px; margin-top: 12px; }
+    button { background:#5b7cfa; color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:600; cursor:pointer; }
+    button:hover { background:#6d89fb; }
+    .hint { color:#9fb0ff; font-size: 12px; }
+    .card { background:#0e1534; border:1px solid #22307a; border-radius: 10px; padding:12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Web Builder</h1>
+      <p>Turn a prompt or screenshot into a deployable website. Optionally auto-deploy to GitHub Pages.</p>
+    </header>
+
+    <form action="/generate" method="post" enctype="multipart/form-data">
+      <div class="row">
+        <div class="card">
+          <label for="prompt">Prompt</label>
+          <textarea id="prompt" name="prompt" placeholder="Describe the site you want..."></textarea>
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <label for="project_name">Project name</label>
+            <input type="text" id="project_name" name="project_name" placeholder="auto-generated if empty" />
+          </div>
+          <div class="card">
+            <label for="image">Optional reference image</label>
+            <input type="file" id="image" name="image" accept="image/*" />
+            <div class="hint">If provided, the app will try to match the design.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <label>
+            <input type="checkbox" name="auto_deploy" /> Auto-deploy to GitHub Pages
+          </label>
+          <div class="grid" style="margin-top:8px;">
+            <input type="text" name="github_username" placeholder="GitHub username" />
+            <input type="text" name="repo_name" placeholder="Repository name (defaults to project name)" />
+            <input type="password" name="github_token" placeholder="GitHub token (or set GITHUB_TOKEN env var)" />
+          </div>
+          <div class="hint">Repo will be created or cleaned, files uploaded to main branch, and Pages enabled.</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit">Generate project</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

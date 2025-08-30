@@ -3,13 +3,20 @@ from google.genai import types
 from typing import Dict, Any, Optional
 import json
 import logging
+import os
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-client = genai.Client(api_key="Your-api-key-here")
-def get_data_from_agent(prompt,img=None) -> Optional[Dict[str, Dict[str, str]]]:
+def get_data_from_agent(prompt, img=None) -> Optional[Dict[str, Dict[str, str]]]:
     """Fetch data from agent using amplification + unified development approach"""
     try:
+        # Initialize client from environment variable to avoid hardcoding secrets
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            logger.error("Missing GOOGLE_API_KEY environment variable")
+            return None
+        client = genai.Client(api_key=api_key)
+
         # Step 1: Amplification prompt to extract detailed requirements
         amplification_prompt = """
 You are a senior web developer and UI/UX designer. Analyze the user's request and any uploaded images to create comprehensive web development requirements.
@@ -284,6 +291,9 @@ def extract_json_from_response(response_text: str) -> Dict[str, Dict[str, str]]:
                 parsed = json.loads(match)
                 # Check if it has the expected structure for amplification
                 if 'project_analysis' in parsed and 'detailed_requirements' in parsed:
+                    return parsed
+                # New amplification shape
+                if all(k in parsed for k in ['structural_demand', 'styling_demand', 'scripting_demand']):
                     return parsed
                 # Check if it has the expected structure for development
                 elif all(key in parsed for key in ['html', 'css', 'js']):
